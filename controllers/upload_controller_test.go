@@ -107,7 +107,7 @@ func TestRecordedPartHasDefaultBucketWhenInValidSubdomain(t *testing.T) {
 }
 
 func TestRecordedPartHasKey(t *testing.T) {
-  req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
+  req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/path/to/my/object", nil)
   addHeaders(req)
   db := domain.NewInMemoryDatabase()
   controller := &UploadController{}

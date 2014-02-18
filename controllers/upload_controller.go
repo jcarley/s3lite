@@ -1,8 +1,8 @@
 package controllers
 
 import (
-  "fmt"
   "strconv"
+  "strings"
   "regexp"
   "io/ioutil"
   "net/http"
@@ -15,7 +15,7 @@ import (
 
 var rxFilename = regexp.MustCompile(`filename=(.*)$`)
 var rxBucket = regexp.MustCompile(`^([\S\w\-]+)\.s3`)
-var rxKey = regexp.MustCompile(`^.*\/uploads\/([a-zA-z\/]*)$`)
+var rxKey = regexp.MustCompile(`^.*\/([a-zA-z\/]*)$`)
 
 type UploadController struct {}
 
@@ -83,14 +83,12 @@ func (u *UploadController) parseBucket(req *http.Request) string {
 
 func (u *UploadController) parseKey(req *http.Request) string {
 
-  fmt.Println(req.URL.Path)
+  key := req.URL.Path
 
-  matches := rxKey.FindStringSubmatch(req.URL.Path)
-
-  key := ""
-  if len(matches) > 1 {
-    key = matches[1]
+  if strings.Index(key, "/") == 0 {
+    key = key[1:]
   }
+
   return key
 }
 

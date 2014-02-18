@@ -22,8 +22,8 @@ func RegisterWebService(webservice WebService, classicMartini *martini.ClassicMa
     fmt.Println(req.URL.RawQuery)
     return "Hello"
   })
-  classicMartini.Post("/uploads/**", webservice.InitiateMultipartUpload)
-  classicMartini.Put("/uploads", webservice.UploadPart)
+  classicMartini.Post("/**", webservice.InitiateMultipartUpload)
+  classicMartini.Put("/**", webservice.UploadPart)
 }
 
     // users GET    /users(.:format)                        users#index
