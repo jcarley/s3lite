@@ -1,3 +1,7 @@
+Start the server
+---------------
+go run server.go
+
 
 Valid values for x-amz-acl
 --------------------------
@@ -10,7 +14,6 @@ bucket-owner-full-control
 
 Sample requests
 ---------------
-
 -- Initiate a new multipart upload
 curl -i -X "POST" --header "Content-Disposition: attachment; filename=foobar.mov" "http://localhost:8080/path/to/my/object?uploads"
 
