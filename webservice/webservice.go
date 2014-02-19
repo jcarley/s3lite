@@ -11,7 +11,7 @@ import (
   // private | public-read | public-read-write | authenticated-read | bucket-owner-read | bucket-owner-full-control
 
 type WebService interface {
-  InitiateMultipartUpload(req *http.Request, db domain.Database) (int, string)
+  InitiateMultipartUpload(req *http.Request, db domain.Database, blobStorage domain.BlobStorage) (int, string)
   UploadPart(params martini.Params, res http.ResponseWriter, req *http.Request) (int, string)
 }
 

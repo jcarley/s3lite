@@ -24,12 +24,19 @@ func NewUploadController() *UploadController {
   return &UploadController{}
 }
 
-func (u *UploadController) InitiateMultipartUpload(req *http.Request, db domain.Database) (int, string) {
+func (u *UploadController) InitiateMultipartUpload(req *http.Request, db domain.Database, blobStorage domain.BlobStorage) (int, string) {
+
+  bucketName := u.parseBucket(req)
+  bucket := domain.NewBucket(bucketName)
+
+  // if !blobStorage.Exists(bucket) {
+    // blobStorage.Create(bucket)
+  // }
 
   upload := domain.NewUpload()
   upload.GetNewUploadId()
   upload.Filename = u.parseFilename(req)
-  upload.Bucket = u.parseBucket(req)
+  upload.Bucket = bucket.Name
   upload.Key = u.parseKey(req)
 
   db.CreateUpload(upload)

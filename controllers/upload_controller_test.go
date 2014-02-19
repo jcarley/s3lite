@@ -5,8 +5,8 @@ import (
   "testing"
   "net/http"
   "encoding/xml"
-  "github.com/jcarley/s3lite/domain"
   "github.com/jcarley/s3lite/webservice"
+  "github.com/jcarley/s3lite/infrastructure"
   "github.com/stretchr/testify/assert"
 )
 
@@ -35,7 +35,7 @@ func TestInitiateMultipartUploadReturnsAnUploadId(t *testing.T) {
 
   req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
   addHeaders(req)
-  db := domain.NewInMemoryDatabase()
+  db := infrastructure.NewInMemoryDatabase()
   controller := &UploadController{}
 
   status, response := controller.InitiateMultipartUpload(req, db)
@@ -50,7 +50,7 @@ func TestRecordedPartHasUploadId(t *testing.T) {
 
   req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
   addHeaders(req)
-  db := domain.NewInMemoryDatabase()
+  db := infrastructure.NewInMemoryDatabase()
   controller := &UploadController{}
 
   _, response := controller.InitiateMultipartUpload(req, db)
@@ -66,7 +66,7 @@ func TestRecordedPartHasUploadId(t *testing.T) {
 func TestRecordedPartHasFilename(t *testing.T) {
   req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
   addHeaders(req)
-  db := domain.NewInMemoryDatabase()
+  db := infrastructure.NewInMemoryDatabase()
   controller := &UploadController{}
 
   _, response := controller.InitiateMultipartUpload(req, db)
@@ -80,7 +80,7 @@ func TestRecordedPartHasFilename(t *testing.T) {
 func TestRecordedPartHasBucketWhenValidSubdomain(t *testing.T) {
   req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
   addHeaders(req)
-  db := domain.NewInMemoryDatabase()
+  db := infrastructure.NewInMemoryDatabase()
   controller := &UploadController{}
 
   _, response := controller.InitiateMultipartUpload(req, db)
@@ -95,7 +95,7 @@ func TestRecordedPartHasDefaultBucketWhenInValidSubdomain(t *testing.T) {
   req, _ := http.NewRequest("POST", "http://example.com/uploads/path/to/my/object", nil)
   addHeaders(req)
 
-  db := domain.NewInMemoryDatabase()
+  db := infrastructure.NewInMemoryDatabase()
   controller := &UploadController{}
 
   _, response := controller.InitiateMultipartUpload(req, db)
@@ -109,7 +109,7 @@ func TestRecordedPartHasDefaultBucketWhenInValidSubdomain(t *testing.T) {
 func TestRecordedPartHasKey(t *testing.T) {
   req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/path/to/my/object", nil)
   addHeaders(req)
-  db := domain.NewInMemoryDatabase()
+  db := infrastructure.NewInMemoryDatabase()
   controller := &UploadController{}
 
   _, response := controller.InitiateMultipartUpload(req, db)
