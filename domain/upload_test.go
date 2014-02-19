@@ -28,7 +28,3 @@ func TestAddPartReturnsETag(t *testing.T) {
   assert.Equal(t, etag, "_guU3FJJuNrrFtOChHxK2MZXPtQ=")
 }
 
-func TestCreatesUploadIdFolder(t *testing.T) {
-  // upload := Upload{}
-  // upload.
-}
