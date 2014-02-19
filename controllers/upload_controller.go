@@ -19,6 +19,7 @@ var rxKey = regexp.MustCompile(`^.*\/([a-zA-z\/]*)$`)
 
 type UploadController struct {}
 
+
 func NewUploadController() *UploadController {
   return &UploadController{}
 }
@@ -30,6 +31,7 @@ func (u *UploadController) InitiateMultipartUpload(req *http.Request, db domain.
   upload.Filename = u.parseFilename(req)
   upload.Bucket = u.parseBucket(req)
   upload.Key = u.parseKey(req)
+
   db.CreateUpload(upload)
 
   result := webservice.InitiateMultipartUploadResult{UploadId: upload.UploadId, Bucket: upload.Bucket, Key: upload.Key}
