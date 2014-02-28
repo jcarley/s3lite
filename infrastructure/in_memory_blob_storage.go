@@ -1,8 +1,8 @@
 package infrastructure
 
 import (
-  "sync"
   "errors"
+  "sync"
 
   "github.com/jcarley/s3lite/domain"
 )
@@ -14,7 +14,7 @@ var (
 type InMemoryBlobStorage struct {
   sync.RWMutex
   buckets map[uint]*domain.Bucket
-  seq uint
+  seq     uint
 }
 
 func NewInMemoryBlobStorage() *InMemoryBlobStorage {
@@ -52,5 +52,3 @@ func (bs *InMemoryBlobStorage) Exists(bucket *domain.Bucket) bool {
 
   return res == nil
 }
-
-

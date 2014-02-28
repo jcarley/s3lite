@@ -1,9 +1,6 @@
 package domain
 
 type BlobStorage interface {
-  Create(bucket *Bucket) (bool, error)
+  Create(bucket *Bucket) (uint, error)
   Exists(bucket *Bucket) bool
 }
-
-
-

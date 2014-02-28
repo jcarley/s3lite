@@ -1,28 +1,19 @@
 package controllers
 
 import (
-  "strconv"
-  "strings"
-  "regexp"
   "io/ioutil"
   "net/http"
+  "regexp"
+  "strconv"
+  "strings"
 
+  "github.com/codegangsta/martini"
   "github.com/jcarley/s3lite/domain"
   "github.com/jcarley/s3lite/encoding"
   "github.com/jcarley/s3lite/webservice"
-  "github.com/codegangsta/martini"
 )
 
-var rxFilename = regexp.MustCompile(`filename=(.*)$`)
-var rxBucket = regexp.MustCompile(`^([\S\w\-]+)\.s3`)
-var rxKey = regexp.MustCompile(`^.*\/([a-zA-z\/]*)$`)
-
-type UploadController struct {}
-
-
-func NewUploadController() *UploadController {
-  return &UploadController{}
-}
+type UploadController struct{}
 
 func (u *UploadController) InitiateMultipartUpload(req *http.Request, db domain.Database, blobStorage domain.BlobStorage) (int, string) {
 
@@ -30,7 +21,7 @@ func (u *UploadController) InitiateMultipartUpload(req *http.Request, db domain.
   bucket := domain.NewBucket(bucketName)
 
   // if !blobStorage.Exists(bucket) {
-    // blobStorage.Create(bucket)
+  // blobStorage.Create(bucket)
   // }
 
   upload := domain.NewUpload()
@@ -67,38 +58,3 @@ func (u *UploadController) UploadPart(params martini.Params, res http.ResponseWr
 
   return 200, etag
 }
-
-func (u *UploadController) parseFilename(req *http.Request) string {
-
-  matches := rxFilename.FindStringSubmatch(req.Header.Get("Content-Disposition"))
-
-  filename := ""
-  if len(matches) > 1 {
-    filename = matches[1]
-  }
-
-  return filename
-}
-
-func (u *UploadController) parseBucket(req *http.Request) string {
-  matches := rxBucket.FindStringSubmatch(req.Host)
-
-  bucket := "default"
-  if len(matches) > 1 {
-    bucket = matches[1]
-  }
-  return bucket
-}
-
-func (u *UploadController) parseKey(req *http.Request) string {
-
-  key := req.URL.Path
-
-  if strings.Index(key, "/") == 0 {
-    key = key[1:]
-  }
-
-  return key
-}
-
-
