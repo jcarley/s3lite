@@ -1,13 +1,13 @@
 package controllers
 
 import (
-  "fmt"
-  "testing"
-  "net/http"
   "encoding/xml"
-  "github.com/jcarley/s3lite/webservice"
+  "fmt"
   "github.com/jcarley/s3lite/infrastructure"
+  "github.com/jcarley/s3lite/webservice"
   "github.com/stretchr/testify/assert"
+  "net/http"
+  "testing"
 )
 
 func addHeaders(req *http.Request) {
@@ -29,7 +29,6 @@ func GetResultMultipartUploadResult(response string) *webservice.InitiateMultipa
 
   return &result
 }
-
 
 func TestInitiateMultipartUploadReturnsAnUploadId(t *testing.T) {
 
@@ -119,5 +118,3 @@ func TestRecordedPartHasKey(t *testing.T) {
 
   assert.Equal(t, "path/to/my/object", upload.Key)
 }
-
-

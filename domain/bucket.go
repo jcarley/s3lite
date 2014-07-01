@@ -2,7 +2,7 @@ package domain
 
 type Bucket struct {
   Id uint
-  Name string
+  Name string =
 }
 
 func NewBucket(name string) *Bucket {
