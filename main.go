@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"net/http"
 
 	"github.com/codegangsta/martini"
@@ -10,10 +9,17 @@ import (
 	"github.com/jcarley/s3lite/infrastructure"
 )
 
-func SetupDB() *sql.DB {
-	db, err := sql.Open("mysql", "user:password@/dbname")
-	PanicIf(err)
-	return db
+func SetupDB() *domain.Database {
+	// db, err := sql.Open("mysql", "user:password@/dbname")
+	// PanicIf(err)
+	// return db
+	db := infrastructure.NewInMemoryDatabase()
+	return &db.(*domain.Database)
+}
+
+func SetupBlobStorage() *domain.BlobStorage {
+	bs := infrastructure.NewInMemoryBlobStorage()
+	return &bs
 }
 
 func PanicIf(err error) {
@@ -22,28 +28,10 @@ func PanicIf(err error) {
 	}
 }
 
-func DB() martini.Handler {
-	return func(c martini.Context) {
-		var db domain.Database
-		db = infrastructure.NewInMemoryDatabase()
-		c.MapTo(db, (*domain.Database)(nil))
-		c.Next()
-	}
-}
-
-func BS() martini.Handler {
-	return func(c martini.Context) {
-		var bs domain.BlobStorage
-		bs = infrastructure.NewInMemoryBlobStorage()
-		c.MapTo(bs, (*domain.BlobStorage)(nil))
-		c.Next()
-	}
-}
-
 func main() {
 	m := martini.Classic()
-	m.Use(DB())
-	m.Use(BS())
+	m.Map(SetupDB())
+	m.Map(SetupBlobStorage())
 
 	buckets.RegisterWebService(m)
 
