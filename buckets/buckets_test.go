@@ -1,24 +1,26 @@
 package buckets
 
 import (
-  "encoding/xml"
-  "fmt"
-  "github.com/jcarley/s3lite/infrastructure"
-  "github.com/jcarley/s3lite/webservice"
-  "github.com/stretchr/testify/assert"
-  "net/http"
-  "testing"
+	"net/http"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func addHeaders(req *http.Request) {
-  req.Header.Add("Authorization", "GHIJKLMNOPQRSTUV1234567890")
-  req.Header.Add("Content-Type", "binary/octel-stream")
-  req.Header.Add("Content-Length", "0")
-  req.Header.Add("Date", "Wed, 01 Mar  2006 12:00:00 GMT")
+	req.Header.Add("Authorization", "GHIJKLMNOPQRSTUV1234567890")
+	req.Header.Add("Content-Disposition", "attachment; filename=foobar.mov")
+	req.Header.Add("Content-Type", "binary/octel-stream")
+	req.Header.Add("x-amz-acl", "private")
+	req.Header.Add("x-amz-server-side-encryption", "AES256")
 }
 
-func testPutBucket(t *testing.T) {
-  req, _ := http.NewRequest("PUT", "http://bucket-us-west.s3.example.com", nil)
-  addHeaders(req)
+func TestCreateBucket_ReturnsBucketName(t *testing.T) {
+	req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
+	addHeaders(req)
 
+	status, bucketName := CreateBucket(req, nil)
+
+	assert.Equal(t, status, 201)
+	assert.Equal(t, bucketName, "bucket-us-west")
 }
