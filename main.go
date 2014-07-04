@@ -4,36 +4,28 @@ import (
 	"net/http"
 
 	"github.com/codegangsta/martini"
-	"github.com/jcarley/s3lite/buckets"
-	"github.com/jcarley/s3lite/domain"
-	"github.com/jcarley/s3lite/infrastructure"
+	"github.com/codegangsta/martini-contrib/render"
+	"github.com/jcarley/s3lite/app/lib"
+	"github.com/jcarley/s3lite/app/models"
 )
 
-func SetupDB() *domain.Database {
-	// db, err := sql.Open("mysql", "user:password@/dbname")
-	// PanicIf(err)
-	// return db
-	db := infrastructure.NewInMemoryDatabase()
-	return &db.(*domain.Database)
+func PopulateAppContext(martiniContext martini.Context, w http.ResponseWriter, request *http.Request, renderer render.Render) {
+	dbContext := models.NewDbContext()
+	appContext := lib.AppContext{DbContext: dbContext, Request: request, Renderer: renderer, MartiniContext: martiniContext}
+
+	martiniContext.Map(appContext)
 }
 
-func SetupBlobStorage() *domain.BlobStorage {
-	bs := infrastructure.NewInMemoryBlobStorage()
-	return &bs
-}
-
-func PanicIf(err error) {
-	if err != nil {
-		panic(err)
-	}
+func CloseDatabase(martiniContext martini.Context, appContext *lib.AppContext) {
+	martiniContext.Next()
+	appContext.DbContext.Dbmap.Db.Close()
 }
 
 func main() {
 	m := martini.Classic()
-	m.Map(SetupDB())
-	m.Map(SetupBlobStorage())
 
-	buckets.RegisterWebService(m)
+	m.Use(PopulateAppContext)
+	m.Use(CloseDatabase)
 
 	http.ListenAndServe(":8080", m)
 }
