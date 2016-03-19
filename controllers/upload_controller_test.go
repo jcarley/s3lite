@@ -71,31 +71,21 @@ func TestUploadPartHasRequiredHeaders(t *testing.T) {
 
 }
 
-func TestUploadPartHasBucketWhenValidSubdomain(t *testing.T) {
-	// req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
-	// addHeaders(req)
-	// db := domain.NewInMemoryDatabase()
-	// controller := &UploadController{}
+func TestUploadPartHasBucket(t *testing.T) {
+	RegisterTestingT(t)
 
-	// _, response := controller.InitiateMultipartUpload(req, db)
-	// result := GetResultMultipartUploadResult(response)
+	cases := []struct {
+		Url      string
+		Expected string
+	}{
+		{"http://bucket-us-west.s3.example.com/uploads/path/to/my/object", "bucket-us-west"},
+		{"http://example.com/uploads/path/to/my/object", "default"},
+	}
 
-	// upload := db.GetUploadByUploadId(result.UploadId)
-
-	// assert.Equal(t, "bucket-us-west", upload.Bucket)
-}
-
-func TestRecordedPartHasDefaultBucketWhenInValidSubdomain(t *testing.T) {
-	// req, _ := http.NewRequest("POST", "http://example.com/uploads/path/to/my/object", nil)
-	// addHeaders(req)
-
-	// db := domain.NewInMemoryDatabase()
-	// controller := &UploadController{}
-
-	// _, response := controller.InitiateMultipartUpload(req, db)
-	// result := GetResultMultipartUploadResult(response)
-
-	// upload := db.GetUploadByUploadId(result.UploadId)
-
-	// assert.Equal(t, "default", upload.Bucket)
+	for _, tc := range cases {
+		req, _ := http.NewRequest("PUT", tc.Url, nil)
+		controller := &UploadController{}
+		actual := controller.parseBucket(req)
+		Expect(tc.Expected).To(Equal(actual))
+	}
 }
