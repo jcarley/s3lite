@@ -1,123 +1,101 @@
 package controllers
 
 import (
-  "fmt"
-  "testing"
-  "net/http"
-  "encoding/xml"
-  "github.com/jcarley/s3lite/domain"
-  "github.com/jcarley/s3lite/webservice"
-  "github.com/stretchr/testify/assert"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	. "github.com/onsi/gomega"
 )
 
 func addHeaders(req *http.Request) {
-  req.Header.Add("Authorization", "GHIJKLMNOPQRSTUV1234567890")
-  req.Header.Add("Content-Disposition", "attachment; filename=foobar.mov")
-  req.Header.Add("Content-Type", "binary/octel-stream")
-  req.Header.Add("x-amz-acl", "private")
-  req.Header.Add("x-amz-server-side-encryption", "AES256")
+	req.Header.Add("Authorization", "GHIJKLMNOPQRSTUV1234567890")
+	req.Header.Add("Content-Disposition", "attachment; filename=foobar.mov")
+	req.Header.Add("Content-Type", "binary/octel-stream")
+	req.Header.Add("Upload-Id", "GHIJKLMNOPQRSTUV1234567890")
+	req.Header.Add("Part-Number", "1")
+	req.Header.Add("x-amz-acl", "private")
+	req.Header.Add("x-amz-server-side-encryption", "AES256")
 }
 
-func GetResultMultipartUploadResult(response string) *webservice.InitiateMultipartUploadResult {
-  result := webservice.InitiateMultipartUploadResult{}
-
-  err := xml.Unmarshal([]byte(response), &result)
-  if err != nil {
-    fmt.Printf("error: %v", err)
-    return nil
-  }
-
-  return &result
+func GetRawData(t *testing.T, buffer []byte) (data map[string]interface{}) {
+	err := json.Unmarshal(buffer, &data)
+	if err != nil {
+		t.Fatalf("Failed to unmarshal buffer: ", err)
+	}
+	return
 }
-
 
 func TestInitiateMultipartUploadReturnsAnUploadId(t *testing.T) {
+	RegisterTestingT(t)
 
-  req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
-  addHeaders(req)
-  db := domain.NewInMemoryDatabase()
-  controller := &UploadController{}
+	controller := &UploadController{}
 
-  status, response := controller.InitiateMultipartUpload(req, db)
-  result := GetResultMultipartUploadResult(response)
+	req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
+	addHeaders(req)
 
-  assert.Equal(t, status, 201)
-  assert.NotNil(t, result)
-  assert.NotNil(t, result.UploadId)
+	w := httptest.NewRecorder()
+
+	controller.InitiateMultipartUpload(w, req)
+
+	data := GetRawData(t, w.Body.Bytes())
+
+	Expect(data["upload_id"]).ToNot(BeNil(), "Should have an upload id")
+	Expect(w.Code).To(Equal(http.StatusOK), "Should receive 200 status")
 }
 
-func TestRecordedPartHasUploadId(t *testing.T) {
+func TestUploadPartHasRequiredHeaders(t *testing.T) {
+	RegisterTestingT(t)
 
-  req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
-  addHeaders(req)
-  db := domain.NewInMemoryDatabase()
-  controller := &UploadController{}
+	cases := []struct {
+		Header string
+		Err    error
+	}{
+		{"Upload-Id", MissingUploadIdError},
+		{"Part-Number", MissingPartNumberError},
+		{"Authorization", MissingAuthorizationKeyError},
+		{"Content-Disposition", MissingContentDispostionError},
+	}
 
-  _, response := controller.InitiateMultipartUpload(req, db)
-  result := GetResultMultipartUploadResult(response)
+	for _, tc := range cases {
+		controller := &UploadController{}
+		req, _ := http.NewRequest("PUT", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
+		addHeaders(req)
+		req.Header.Del(tc.Header)
+		w := httptest.NewRecorder()
+		controller.UploadPart(w, req)
+		data := GetRawData(t, w.Body.Bytes())
+		Expect(data["error"]).To(Equal(tc.Err.Error()))
+	}
 
-  upload := db.GetUploadByUploadId(result.UploadId)
-
-  assert.NotNil(t, result)
-  assert.NotNil(t, upload)
-  assert.Equal(t, result.UploadId, upload.UploadId)
 }
 
-func TestRecordedPartHasFilename(t *testing.T) {
-  req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
-  addHeaders(req)
-  db := domain.NewInMemoryDatabase()
-  controller := &UploadController{}
+func TestUploadPartHasBucketWhenValidSubdomain(t *testing.T) {
+	// req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
+	// addHeaders(req)
+	// db := domain.NewInMemoryDatabase()
+	// controller := &UploadController{}
 
-  _, response := controller.InitiateMultipartUpload(req, db)
-  result := GetResultMultipartUploadResult(response)
+	// _, response := controller.InitiateMultipartUpload(req, db)
+	// result := GetResultMultipartUploadResult(response)
 
-  upload := db.GetUploadByUploadId(result.UploadId)
+	// upload := db.GetUploadByUploadId(result.UploadId)
 
-  assert.Equal(t, "foobar.mov", upload.Filename)
-}
-
-func TestRecordedPartHasBucketWhenValidSubdomain(t *testing.T) {
-  req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
-  addHeaders(req)
-  db := domain.NewInMemoryDatabase()
-  controller := &UploadController{}
-
-  _, response := controller.InitiateMultipartUpload(req, db)
-  result := GetResultMultipartUploadResult(response)
-
-  upload := db.GetUploadByUploadId(result.UploadId)
-
-  assert.Equal(t, "bucket-us-west", upload.Bucket)
+	// assert.Equal(t, "bucket-us-west", upload.Bucket)
 }
 
 func TestRecordedPartHasDefaultBucketWhenInValidSubdomain(t *testing.T) {
-  req, _ := http.NewRequest("POST", "http://example.com/uploads/path/to/my/object", nil)
-  addHeaders(req)
+	// req, _ := http.NewRequest("POST", "http://example.com/uploads/path/to/my/object", nil)
+	// addHeaders(req)
 
-  db := domain.NewInMemoryDatabase()
-  controller := &UploadController{}
+	// db := domain.NewInMemoryDatabase()
+	// controller := &UploadController{}
 
-  _, response := controller.InitiateMultipartUpload(req, db)
-  result := GetResultMultipartUploadResult(response)
+	// _, response := controller.InitiateMultipartUpload(req, db)
+	// result := GetResultMultipartUploadResult(response)
 
-  upload := db.GetUploadByUploadId(result.UploadId)
+	// upload := db.GetUploadByUploadId(result.UploadId)
 
-  assert.Equal(t, "default", upload.Bucket)
+	// assert.Equal(t, "default", upload.Bucket)
 }
-
-func TestRecordedPartHasKey(t *testing.T) {
-  req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/path/to/my/object", nil)
-  addHeaders(req)
-  db := domain.NewInMemoryDatabase()
-  controller := &UploadController{}
-
-  _, response := controller.InitiateMultipartUpload(req, db)
-  result := GetResultMultipartUploadResult(response)
-
-  upload := db.GetUploadByUploadId(result.UploadId)
-
-  assert.Equal(t, "path/to/my/object", upload.Key)
-}
-
-
