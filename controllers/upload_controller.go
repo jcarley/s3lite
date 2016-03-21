@@ -3,28 +3,31 @@ package controllers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	"io/ioutil"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 
-	"github.com/jcarley/s3lite/domain"
+	"github.com/jcarley/s3lite/services"
 	// "github.com/jcarley/s3lite/domain"
 	// "github.com/jcarley/s3lite/encoding"
 	// "github.com/jcarley/s3lite/webservice"
 )
 
 var MissingUploadIdError = errors.New("Request is missing an upload id")
-var MissingPartNumberError = errors.New("Request is missing a part number")
+var InvalidPartNumberError = errors.New("The part number is missing or invalid")
 var MissingAuthorizationKeyError = errors.New("Request is missing an authorization key")
 var MissingContentDispostionError = errors.New("Request is missing a content-dispostion")
+var MissingContentBodyError = errors.New("Request does not have a body")
 
 var rxFilename = regexp.MustCompile(`filename=(.*)$`)
 var rxBucket = regexp.MustCompile(`^([\S\w\-]+)\.s3`)
 var rxKey = regexp.MustCompile(`^.*\/([a-zA-z\/]*)$`)
 
-type ErrMessage struct {
-	Msg string `json:"error"`
+type Message struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
 }
 
 type InitiateMultipartUploadResult struct {
@@ -33,33 +36,38 @@ type InitiateMultipartUploadResult struct {
 	UploadId string `json:"upload_id"`
 }
 
-type UploadController struct{}
-
-func NewUploadController() *UploadController {
-	return &UploadController{}
+type UploadController struct {
+	service services.UploadService
 }
 
-func (u *UploadController) InitiateMultipartUpload(rw http.ResponseWriter, req *http.Request) {
-
-	upload := domain.NewUpload()
-	upload.GetNewUploadId()
-	upload.Filename = u.parseFilename(req)
-	upload.Bucket = u.parseBucket(req)
-	upload.Key = u.parseKey(req)
-
-	// TODO: Need to save upload record to database
-	// u.db.CreateUpload(upload)
-
-	result := InitiateMultipartUploadResult{UploadId: upload.UploadId, Bucket: upload.Bucket, Key: upload.Key}
-	encoder := json.NewEncoder(rw)
-	err := encoder.Encode(result)
-	if err != nil {
-		fmt.Println(err.Error())
-		http.Error(rw, err.Error(), http.StatusInternalServerError)
+func NewUploadController(service services.UploadService) *UploadController {
+	return &UploadController{
+		service,
 	}
 }
 
-func (u *UploadController) UploadPart(rw http.ResponseWriter, req *http.Request) {
+func (this *UploadController) InitiateMultipartUpload(rw http.ResponseWriter, req *http.Request) {
+
+	filename := this.parseFilename(req)
+	bucket := this.parseBucket(req)
+	key := this.parseKey(req)
+
+	upload, err := this.service.CreateUpload(filename, bucket, key)
+	if err != nil {
+		httpError(err, http.StatusInternalServerError, rw)
+		return
+	}
+
+	result := InitiateMultipartUploadResult{UploadId: upload.UploadId, Bucket: upload.Bucket, Key: upload.Key}
+	encoder := json.NewEncoder(rw)
+	err = encoder.Encode(result)
+	if err != nil {
+		httpError(err, http.StatusInternalServerError, rw)
+		return
+	}
+}
+
+func (this *UploadController) UploadPart(rw http.ResponseWriter, req *http.Request) {
 
 	uploadId := getHeaderValue("Upload-Id", req)
 	if uploadId == "" {
@@ -67,9 +75,9 @@ func (u *UploadController) UploadPart(rw http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	partNumber := getHeaderValue("Part-Number", req)
-	if partNumber == "" {
-		httpError(MissingPartNumberError, http.StatusBadRequest, rw)
+	partNumber, err := strconv.Atoi(getHeaderValue("Part-Number", req))
+	if err != nil {
+		httpError(InvalidPartNumberError, http.StatusBadRequest, rw)
 		return
 	}
 
@@ -79,24 +87,39 @@ func (u *UploadController) UploadPart(rw http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	filename := u.parseFilename(req)
+	filename := this.parseFilename(req)
 	if filename == "" {
 		httpError(MissingContentDispostionError, http.StatusBadRequest, rw)
 		return
 	}
 
-	// partNumber, err := strconv.Atoi(params["partNumber"])
-	// if err != nil {
-	// panic(err)
-	// }
-	// uploadId := params["uploadId"]
-	// body, err := ioutil.ReadAll(req.Body)
-	// if err != nil {
-	// panic(err)
-	// }
+	if req.Body == nil {
+		httpError(MissingContentBodyError, http.StatusBadRequest, rw)
+		return
+	}
+	var body []byte
+	body, err = ioutil.ReadAll(req.Body)
+	if len(body) == 0 {
+		httpError(MissingContentBodyError, http.StatusBadRequest, rw)
+		return
+	}
+	if err != nil {
+		httpError(err, http.StatusBadRequest, rw)
+		return
+	}
 
-	// upload := domain.NewUpload()
-	// etag := upload.AddPart(partNumber, uploadId, body)
+	if etag, err := this.service.AddPart(partNumber, uploadId, body); err != nil {
+		httpError(err, http.StatusInternalServerError, rw)
+		return
+	} else {
+		encoder := json.NewEncoder(rw)
+		successMessage := Message{"success", etag}
+		err = encoder.Encode(successMessage)
+		if err != nil {
+			httpError(err, http.StatusInternalServerError, rw)
+			return
+		}
+	}
 
 }
 
@@ -143,7 +166,8 @@ func getHeaderValue(name string, req *http.Request) string {
 }
 
 func httpError(err error, status int, rw http.ResponseWriter) {
-	errorMessage := ErrMessage{err.Error()}
+	errorMessage := Message{"error", err.Error()}
+
 	result, err := json.Marshal(errorMessage)
 	if err != nil {
 		http.Error(rw, "Internal Server Error", http.StatusInternalServerError)

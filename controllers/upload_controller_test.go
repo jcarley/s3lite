@@ -2,10 +2,13 @@ package controllers
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	services "github.com/jcarley/s3lite/services/testing"
 	. "github.com/onsi/gomega"
 )
 
@@ -27,10 +30,15 @@ func GetRawData(t *testing.T, buffer []byte) (data map[string]interface{}) {
 	return
 }
 
+func GetUploadController() *UploadController {
+	mockUploadService := services.NewMockUploadService()
+	return NewUploadController(mockUploadService)
+}
+
 func TestInitiateMultipartUploadReturnsAnUploadId(t *testing.T) {
 	RegisterTestingT(t)
 
-	controller := &UploadController{}
+	controller := GetUploadController()
 
 	req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
 	addHeaders(req)
@@ -45,6 +53,23 @@ func TestInitiateMultipartUploadReturnsAnUploadId(t *testing.T) {
 	Expect(w.Code).To(Equal(http.StatusOK), "Should receive 200 status")
 }
 
+func TestInitiateMultipartUploadCreatesAnUploadRecord(t *testing.T) {
+	RegisterTestingT(t)
+
+	controller := GetUploadController()
+
+	req, _ := http.NewRequest("POST", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
+	addHeaders(req)
+
+	w := httptest.NewRecorder()
+
+	controller.InitiateMultipartUpload(w, req)
+
+	service := controller.service.(*services.MockUploadService)
+
+	Expect(service.Called("CreateUpload").Times(1)).To(BeTrue())
+}
+
 func TestUploadPartHasRequiredHeaders(t *testing.T) {
 	RegisterTestingT(t)
 
@@ -53,20 +78,20 @@ func TestUploadPartHasRequiredHeaders(t *testing.T) {
 		Err    error
 	}{
 		{"Upload-Id", MissingUploadIdError},
-		{"Part-Number", MissingPartNumberError},
+		{"Part-Number", InvalidPartNumberError},
 		{"Authorization", MissingAuthorizationKeyError},
 		{"Content-Disposition", MissingContentDispostionError},
 	}
 
 	for _, tc := range cases {
-		controller := &UploadController{}
+		controller := GetUploadController()
 		req, _ := http.NewRequest("PUT", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", nil)
 		addHeaders(req)
 		req.Header.Del(tc.Header)
 		w := httptest.NewRecorder()
 		controller.UploadPart(w, req)
 		data := GetRawData(t, w.Body.Bytes())
-		Expect(data["error"]).To(Equal(tc.Err.Error()))
+		Expect(data["message"]).To(Equal(tc.Err.Error()))
 	}
 
 }
@@ -84,8 +109,72 @@ func TestUploadPartHasBucket(t *testing.T) {
 
 	for _, tc := range cases {
 		req, _ := http.NewRequest("PUT", tc.Url, nil)
-		controller := &UploadController{}
+		controller := GetUploadController()
 		actual := controller.parseBucket(req)
 		Expect(tc.Expected).To(Equal(actual))
 	}
+}
+
+func TestUploadPartRequiresBody(t *testing.T) {
+	RegisterTestingT(t)
+
+	cases := []struct {
+		Reader io.Reader
+	}{
+		{strings.NewReader("")},
+		{nil},
+	}
+
+	for _, tc := range cases {
+		reader := tc.Reader
+		req, _ := http.NewRequest("PUT", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", reader)
+		addHeaders(req)
+		w := httptest.NewRecorder()
+
+		controller := GetUploadController()
+		controller.UploadPart(w, req)
+
+		data := GetRawData(t, w.Body.Bytes())
+		Expect(data["message"]).To(Equal(MissingContentBodyError.Error()))
+	}
+
+}
+
+func TestUploadPartAddsThePart(t *testing.T) {
+	RegisterTestingT(t)
+
+	body := strings.NewReader("AAAAAAAAAAAAAAAAAAAAAAAA")
+	req, _ := http.NewRequest("PUT", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", body)
+	addHeaders(req)
+
+	w := httptest.NewRecorder()
+
+	controller := GetUploadController()
+	controller.UploadPart(w, req)
+
+	service := controller.service.(*services.MockUploadService)
+
+	Expect(service.Called("AddPart").Times(1)).To(BeTrue())
+}
+
+func TestUploadPartReturnsAnEtag(t *testing.T) {
+	RegisterTestingT(t)
+
+	body := strings.NewReader("AAAAAAAAAAAAAAAAAAAAAAAA")
+	req, _ := http.NewRequest("PUT", "http://bucket-us-west.s3.example.com/uploads/path/to/my/object", body)
+	addHeaders(req)
+
+	w := httptest.NewRecorder()
+
+	controller := GetUploadController()
+
+	service := controller.service.(*services.MockUploadService)
+	service.On("AddPart").Return("12345", nil)
+
+	controller.UploadPart(w, req)
+
+	data := GetRawData(t, w.Body.Bytes())
+
+	Expect(data["status"]).To(Equal("success"))
+	Expect(data["message"]).To(Equal("12345"))
 }
