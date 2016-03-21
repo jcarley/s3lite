@@ -1,6 +1,10 @@
 package testing
 
-import "github.com/jcarley/s3lite/domain"
+import (
+	"reflect"
+
+	"github.com/jcarley/s3lite/domain"
+)
 
 type MockUploadService struct {
 	callChain map[string]struct {
@@ -26,13 +30,55 @@ func (this *MockUploadService) AddPart(partNumber int, uploadId string, body []b
 	this.addCallChainFunc("AddPart")
 
 	if methodWatch, ok := this.methodWatches["AddPart"]; ok {
-		etag = methodWatch.ReturnArgs[0].(string)
-		// err = methodWatch.ReturnArgs[1]
+
+		// getReturnArg(methodWatch, 0, &etag, "")
+
+		x := ""
+		v := reflect.ValueOf(x)
+		v.SetString(methodWatch.ReturnArgs[0].(string))
+
+		// fmt.Printf("%#v\n", etag)
+
 		err = nil
+
+		// getReturnArg(methodWatch, 1, &err, nil)
+		// switch methodWatch.ReturnArgs[0].(type) {
+		// case string:
+		// etag = methodWatch.ReturnArgs[0].(string)
+		// default:
+		// etag = ""
+		// }
+
+		// switch methodWatch.ReturnArgs[1].(type) {
+		// case error:
+		// err = methodWatch.ReturnArgs[1].(error)
+		// default:
+		// err = nil
+		// }
+
 		return
 	}
 
 	return "", nil
+}
+
+func getReturnArg(methodWatch *MethodWatch, idx int, value interface{}, defaultValue interface{}) {
+
+	v := reflect.ValueOf(value)
+	x := reflect.ValueOf(methodWatch.ReturnArgs[idx])
+	v.Set(x)
+	return
+
+	// switch methodWatch.ReturnArgs[idx].(type) {
+	// case string:
+	// fmt.Println("************************** HERE")
+	// newValue := methodWatch.ReturnArgs[idx].(string)
+	// value = &newValue
+	// case error:
+	// value = methodWatch.ReturnArgs[idx].(error)
+	// default:
+	// value = defaultValue
+	// }
 }
 
 func (this *MockUploadService) CreateUpload(filename string, bucket string, key string) (upload domain.Upload, err error) {
