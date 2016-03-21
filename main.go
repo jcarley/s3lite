@@ -13,12 +13,12 @@ func SetupDB() *domain.Database {
 	// db, err := sql.Open("mysql", "user:password@/dbname")
 	// PanicIf(err)
 	// return db
-	db := infrastructure.NewInMemoryDatabase()
-	return &db.(*domain.Database)
+	db := domain.Database(infrastructure.NewInMemoryDatabase())
+	return &db
 }
 
 func SetupBlobStorage() *domain.BlobStorage {
-	bs := infrastructure.NewInMemoryBlobStorage()
+	bs := domain.BlobStorage(infrastructure.NewInMemoryBlobStorage())
 	return &bs
 }
 
