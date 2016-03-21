@@ -1,4 +1,4 @@
-package domain
+package models
 
 type Bucket struct {
 	Id      int64  `db:"id"`
