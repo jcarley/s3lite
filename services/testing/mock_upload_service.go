@@ -41,28 +41,26 @@ func (this *MockUploadService) AddPart(partNumber int, uploadId string, body []b
 	return "", nil
 }
 
-func getReturnArg(methodWatch *MethodWatch, idx int, value interface{}, defaultValue interface{}) error {
+func getReturnArg(methodWatch *MethodWatch, idx int, value interface{}, defaultValue interface{}) {
 
 	dataValue := reflect.ValueOf(value)
 	argsValue := reflect.ValueOf(methodWatch.ReturnArgs[idx])
 
 	if dataValue.Kind() != reflect.Ptr {
-		return errors.New("result must be a pointer")
+		panic(errors.New("result must be a pointer"))
 	}
 
 	dataElem := dataValue.Elem()
 	if !dataElem.CanAddr() {
-		return errors.New("result must be addressable (a pointer)")
+		panic(errors.New("result must be addressable (a pointer)"))
 	}
 
 	if !argsValue.IsValid() {
 		dataValue.Elem().Set(reflect.Zero(dataValue.Elem().Type()))
-		return nil
+		return
 	}
 
 	dataValue.Elem().Set(argsValue)
-
-	return nil
 }
 
 func (this *MockUploadService) CreateUpload(filename string, bucket string, key string) (upload domain.Upload, err error) {
