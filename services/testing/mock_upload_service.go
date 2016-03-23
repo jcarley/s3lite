@@ -41,9 +41,9 @@ func (this *MockUploadService) AddPart(partNumber int, uploadId string, body []b
 	return "", nil
 }
 
-func getReturnArg(methodWatch *MethodWatch, idx int, value interface{}, defaultValue interface{}) {
+func getReturnArg(methodWatch *MethodWatch, idx int, data interface{}, defaultValue interface{}) {
 
-	dataValue := reflect.ValueOf(value)
+	dataValue := reflect.ValueOf(data)
 	argsValue := reflect.ValueOf(methodWatch.ReturnArgs[idx])
 
 	if dataValue.Kind() != reflect.Ptr {
@@ -56,11 +56,11 @@ func getReturnArg(methodWatch *MethodWatch, idx int, value interface{}, defaultV
 	}
 
 	if !argsValue.IsValid() {
-		dataValue.Elem().Set(reflect.Zero(dataValue.Elem().Type()))
+		dataElem.Set(reflect.Zero(dataElem.Type()))
 		return
 	}
 
-	dataValue.Elem().Set(argsValue)
+	dataElem.Set(argsValue)
 }
 
 func (this *MockUploadService) CreateUpload(filename string, bucket string, key string) (upload domain.Upload, err error) {
