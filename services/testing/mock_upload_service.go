@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"errors"
 	"reflect"
 
 	"github.com/jcarley/s3lite/domain"
@@ -31,30 +32,8 @@ func (this *MockUploadService) AddPart(partNumber int, uploadId string, body []b
 
 	if methodWatch, ok := this.methodWatches["AddPart"]; ok {
 
-		// getReturnArg(methodWatch, 0, &etag, "")
-
-		x := ""
-		v := reflect.ValueOf(x)
-		v.SetString(methodWatch.ReturnArgs[0].(string))
-
-		// fmt.Printf("%#v\n", etag)
-
-		err = nil
-
-		// getReturnArg(methodWatch, 1, &err, nil)
-		// switch methodWatch.ReturnArgs[0].(type) {
-		// case string:
-		// etag = methodWatch.ReturnArgs[0].(string)
-		// default:
-		// etag = ""
-		// }
-
-		// switch methodWatch.ReturnArgs[1].(type) {
-		// case error:
-		// err = methodWatch.ReturnArgs[1].(error)
-		// default:
-		// err = nil
-		// }
+		getReturnArg(methodWatch, 0, &etag, "")
+		getReturnArg(methodWatch, 1, &err, nil)
 
 		return
 	}
@@ -62,23 +41,28 @@ func (this *MockUploadService) AddPart(partNumber int, uploadId string, body []b
 	return "", nil
 }
 
-func getReturnArg(methodWatch *MethodWatch, idx int, value interface{}, defaultValue interface{}) {
+func getReturnArg(methodWatch *MethodWatch, idx int, value interface{}, defaultValue interface{}) error {
 
-	v := reflect.ValueOf(value)
-	x := reflect.ValueOf(methodWatch.ReturnArgs[idx])
-	v.Set(x)
-	return
+	dataValue := reflect.ValueOf(value)
+	argsValue := reflect.ValueOf(methodWatch.ReturnArgs[idx])
 
-	// switch methodWatch.ReturnArgs[idx].(type) {
-	// case string:
-	// fmt.Println("************************** HERE")
-	// newValue := methodWatch.ReturnArgs[idx].(string)
-	// value = &newValue
-	// case error:
-	// value = methodWatch.ReturnArgs[idx].(error)
-	// default:
-	// value = defaultValue
-	// }
+	if dataValue.Kind() != reflect.Ptr {
+		return errors.New("result must be a pointer")
+	}
+
+	dataElem := dataValue.Elem()
+	if !dataElem.CanAddr() {
+		return errors.New("result must be addressable (a pointer)")
+	}
+
+	if !argsValue.IsValid() {
+		dataValue.Elem().Set(reflect.Zero(dataValue.Elem().Type()))
+		return nil
+	}
+
+	dataValue.Elem().Set(argsValue)
+
+	return nil
 }
 
 func (this *MockUploadService) CreateUpload(filename string, bucket string, key string) (upload domain.Upload, err error) {
