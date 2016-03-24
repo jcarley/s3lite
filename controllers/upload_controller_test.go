@@ -35,7 +35,7 @@ func GetUploadController() *UploadController {
 	return NewUploadController(mockUploadService)
 }
 
-func TestInitiateMultipartUploadReturnsAnUploadId(t *testing.T) {
+func TestCreateMultipartUploadReturnsAnUploadId(t *testing.T) {
 	RegisterTestingT(t)
 
 	controller := GetUploadController()
@@ -45,7 +45,7 @@ func TestInitiateMultipartUploadReturnsAnUploadId(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	controller.InitiateMultipartUpload(w, req)
+	controller.CreateMultipartUpload(w, req)
 
 	data := GetRawData(t, w.Body.Bytes())
 
@@ -53,7 +53,7 @@ func TestInitiateMultipartUploadReturnsAnUploadId(t *testing.T) {
 	Expect(w.Code).To(Equal(http.StatusOK), "Should receive 200 status")
 }
 
-func TestInitiateMultipartUploadCreatesAnUploadRecord(t *testing.T) {
+func TestCreateMultipartUploadCreatesAnUploadRecord(t *testing.T) {
 	RegisterTestingT(t)
 
 	controller := GetUploadController()
@@ -63,7 +63,7 @@ func TestInitiateMultipartUploadCreatesAnUploadRecord(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	controller.InitiateMultipartUpload(w, req)
+	controller.CreateMultipartUpload(w, req)
 
 	service := controller.service.(*services.MockUploadService)
 

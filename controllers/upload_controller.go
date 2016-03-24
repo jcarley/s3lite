@@ -30,7 +30,7 @@ type Message struct {
 	Message string `json:"message"`
 }
 
-type InitiateMultipartUploadResult struct {
+type CreateMultipartUploadResult struct {
 	Bucket   string `json:"bucket"`
 	Key      string `json:"key"`
 	UploadId string `json:"upload_id"`
@@ -46,7 +46,11 @@ func NewUploadController(service services.UploadService) *UploadController {
 	}
 }
 
-func (this *UploadController) InitiateMultipartUpload(rw http.ResponseWriter, req *http.Request) {
+// Initiates a multipart upload and returns an upload ID.
+//
+// Note: After you initiate multipart upload and upload one or more parts, you
+// must either complete or abort multipart upload.
+func (this *UploadController) CreateMultipartUpload(rw http.ResponseWriter, req *http.Request) {
 
 	filename := this.parseFilename(req)
 	bucket := this.parseBucket(req)
@@ -58,7 +62,7 @@ func (this *UploadController) InitiateMultipartUpload(rw http.ResponseWriter, re
 		return
 	}
 
-	result := InitiateMultipartUploadResult{UploadId: upload.UploadId, Bucket: upload.Bucket, Key: upload.Key}
+	result := CreateMultipartUploadResult{UploadId: upload.UploadId, Bucket: upload.Bucket, Key: upload.Key}
 	encoder := json.NewEncoder(rw)
 	err = encoder.Encode(result)
 	if err != nil {
@@ -67,6 +71,19 @@ func (this *UploadController) InitiateMultipartUpload(rw http.ResponseWriter, re
 	}
 }
 
+// Aborts a multipart upload.
+func (this *UploadController) AbortMultipartUpload(rw http.ResponseWriter, req *http.Request) {
+}
+
+// Completes a multipart upload by assembling previously uploaded parts.
+func (this *UploadController) CompleteMultipartUpload(rw http.ResponseWriter, req *http.Request) {
+}
+
+// This operation lists in-progress multipart uploads.
+func (this *UploadController) ListMultipartUploads(rw http.ResponseWriter, req *http.Request) {
+}
+
+// Uploads a part in a multipart upload.
 func (this *UploadController) UploadPart(rw http.ResponseWriter, req *http.Request) {
 
 	uploadId := getHeaderValue("Upload-Id", req)
