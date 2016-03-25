@@ -1,7 +1,11 @@
 package domain
 
-type Database interface {
-  GetUploadByUploadId(uploadId string) *Upload
-  CreateUpload(upload *Upload) (uint, error)
+type UploadDatastore interface {
+	GetUploadById(uploadId string) *Upload
+	CreateUpload(upload *Upload) (uint, error)
 }
 
+type BucketDatastore interface {
+	GetBucketById(bucketId string) *Bucket
+	CreateBucket(bucket *Bucket) (string, error)
+}

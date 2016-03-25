@@ -13,13 +13,13 @@ import (
 
 func main() {
 
-	//TODO:  Introduce an AppContext
-
 	session := connectToDB()
+	rethinkDatastore := domain.NewRethinkDatastore(session)
+
 	router := mux.NewRouter()
 
-	uploadService := services.NewUploadService(session)
-	bucketService := services.NewBucketService(session)
+	uploadService := services.NewUploadService(rethinkDatastore)
+	bucketService := services.NewBucketService(rethinkDatastore)
 
 	uploadController := controllers.NewUploadController(uploadService)
 	uploadController.Register(router)
