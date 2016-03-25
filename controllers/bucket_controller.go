@@ -3,16 +3,14 @@ package controllers
 import (
 	"net/http"
 
-	r "github.com/dancannon/gorethink"
 	"github.com/gorilla/mux"
 )
 
 type BucketController struct {
-	session *r.Session
 }
 
-func NewBucketController(session *r.Session) *BucketController {
-	return &BucketController{session}
+func NewBucketController() *BucketController {
+	return &BucketController{}
 }
 
 func (this *BucketController) Register(router mux.Router) {

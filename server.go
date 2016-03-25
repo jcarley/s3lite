@@ -16,13 +16,15 @@ func main() {
 	//TODO:  Introduce an AppContext
 
 	session := connectToDB()
-
 	router := mux.NewRouter()
 
-	uploadController := controllers.NewUploadController(session)
+	uploadService := services.NewUploadService(session)
+	bucketService := services.NewBucketService(session)
+
+	uploadController := controllers.NewUploadController(uploadService)
 	uploadController.Register(router)
 
-	bucketController := controllers.NewBucketController(session)
+	bucketController := controllers.NewBucketController(bucketService)
 	bucketController.Register(router)
 
 	n := negroni.Classic()

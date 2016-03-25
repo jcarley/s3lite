@@ -1,0 +1,7 @@
+rethinkdb:
+  image: rethinkdb:2.2.5
+  volumes:
+    - "${PWD}/data:/data"
+  ports:
+    - "8080:8080"
+
