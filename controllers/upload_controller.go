@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	r "github.com/dancannon/gorethink"
+	"github.com/gorilla/mux"
 	"github.com/jcarley/s3lite/services"
 	// "github.com/jcarley/s3lite/domain"
 	// "github.com/jcarley/s3lite/encoding"
@@ -38,12 +40,17 @@ type CreateMultipartUploadResult struct {
 
 type UploadController struct {
 	service services.UploadService
+	session *r.Session
 }
 
-func NewUploadController(service services.UploadService) *UploadController {
+func NewUploadController(service services.UploadService, session *r.Session) *UploadController {
 	return &UploadController{
 		service,
+		session,
 	}
+}
+
+func (this *UploadController) Register(router mux.Router) {
 }
 
 // Initiates a multipart upload and returns an upload ID.

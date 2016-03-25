@@ -1,29 +1,45 @@
 package main
 
 import (
-  "net/http"
-  "github.com/jcarley/s3lite/domain"
-  "github.com/jcarley/s3lite/controllers"
-  "github.com/jcarley/s3lite/webservice"
-  "github.com/codegangsta/martini"
+	"log"
+	"net/http"
+
+	"github.com/codegangsta/negroni"
+	"github.com/gorilla/mux"
+	"github.com/jcarley/s3lite/controllers"
+
+	r "github.com/dancannon/gorethink"
 )
 
-func DB() martini.Handler {
-  return func(c martini.Context) {
-    var db domain.Database
-    db = domain.NewInMemoryDatabase()
-    c.MapTo(db, (*domain.Database)(nil))
-    c.Next()
-  }
-}
-
 func main() {
-  m := martini.Classic()
-  m.Use(DB())
 
-  uploadController := controllers.NewUploadController()
-  webservice.RegisterWebService(uploadController, m)
+	//TODO:  Introduce an AppContext
 
-  http.ListenAndServe(":8080", m)
+	session := connectToDB()
+
+	router := mux.NewRouter()
+
+	uploadController := controllers.NewUploadController(session)
+	uploadController.Register(router)
+
+	bucketController := controllers.NewBucketController(session)
+	bucketController.Register(router)
+
+	n := negroni.Classic()
+	n.UseHandler(router)
+
+	http.ListenAndServe(":8080", n)
 }
 
+func connectToDB() *r.Session {
+	session, err := r.Connect(r.ConnectOpts{
+		Address:  "localhost:28015",
+		Database: "test",
+		MaxIdle:  10,
+		MaxOpen:  10,
+	})
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+	return session
+}
