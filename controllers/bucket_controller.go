@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"golang.org/x/net/context"
+
 	"github.com/gorilla/mux"
 	"github.com/jcarley/s3lite/domain"
 	"github.com/jcarley/s3lite/services"
+	"github.com/jcarley/s3lite/web"
 )
 
 type BucketController struct {
@@ -19,7 +22,8 @@ func NewBucketController(service services.BucketService) *BucketController {
 	}
 }
 
-func (this *BucketController) Register(router mux.Router) {
+func (this *BucketController) Register(router *mux.Router) {
+	router.Handle("/buckets/{id}", web.NewContextAdapter(web.ContextHandlerFunc(this.DeleteBucket))).Methods("DELETE")
 }
 
 // Buckets
@@ -45,14 +49,15 @@ func (this *BucketController) CreateBucket(rw http.ResponseWriter, req *http.Req
 	}
 }
 
-func (this *BucketController) DeleteBucket(rw http.ResponseWriter, req *http.Request) {
+func (this *BucketController) DeleteBucket(ctx context.Context, rw http.ResponseWriter, req *http.Request) {
 	fmt.Printf("%+v\n", req)
 
-	// map[string]string
-	vars := mux.Vars(req)
-
+	vars := web.VarsFromContext(ctx)
 	id := vars["id"]
 
+	fmt.Println("==========================")
+	fmt.Println(id)
+	fmt.Println("==========================")
 }
 
 func (this *BucketController) HeadBucket(rw http.ResponseWriter, req *http.Request) {

@@ -7,8 +7,11 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/net/context"
+
 	"github.com/jcarley/s3lite/domain"
 	"github.com/jcarley/s3lite/test"
+	"github.com/jcarley/s3lite/web"
 	. "github.com/onsi/gomega"
 )
 
@@ -47,7 +50,6 @@ func TestDeleteBucketRemovesBucket(t *testing.T) {
 	RegisterTestingT(t)
 
 	id := "1234567890"
-
 	path := fmt.Sprintf("http://s3.example.com/buckets/%s", id)
 	req, _ := http.NewRequest("DELETE", path, nil)
 
@@ -55,8 +57,11 @@ func TestDeleteBucketRemovesBucket(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
+	v := make(map[string]string)
+	v["id"] = id
+	ctx := context.WithValue(context.Background(), web.RequestVarsKey, v)
 	controller := GetBucketController()
-	controller.DeleteBucket(w, req)
+	controller.DeleteBucket(ctx, w, req)
 
 	data := test.GetRawData(t, w.Body.Bytes())
 
