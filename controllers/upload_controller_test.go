@@ -1,14 +1,13 @@
 package controllers
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	services "github.com/jcarley/s3lite/services/testing"
+	"github.com/jcarley/s3lite/test"
 	. "github.com/onsi/gomega"
 )
 
@@ -22,16 +21,8 @@ func addHeaders(req *http.Request) {
 	req.Header.Add("x-amz-server-side-encryption", "AES256")
 }
 
-func GetRawData(t *testing.T, buffer []byte) (data map[string]interface{}) {
-	err := json.Unmarshal(buffer, &data)
-	if err != nil {
-		t.Fatalf("Failed to unmarshal buffer: ", err)
-	}
-	return
-}
-
 func GetUploadController() *UploadController {
-	mockUploadService := services.NewMockUploadService()
+	mockUploadService := test.NewMockUploadService()
 	return NewUploadController(mockUploadService)
 }
 
@@ -47,7 +38,7 @@ func TestCreateMultipartUploadReturnsAnUploadId(t *testing.T) {
 
 	controller.CreateMultipartUpload(w, req)
 
-	data := GetRawData(t, w.Body.Bytes())
+	data := test.GetRawData(t, w.Body.Bytes())
 
 	Expect(data["upload_id"]).ToNot(BeNil(), "Should have an upload id")
 	Expect(w.Code).To(Equal(http.StatusOK), "Should receive 200 status")
@@ -65,7 +56,7 @@ func TestCreateMultipartUploadCreatesAnUploadRecord(t *testing.T) {
 
 	controller.CreateMultipartUpload(w, req)
 
-	service := controller.service.(*services.MockUploadService)
+	service := controller.service.(*test.MockUploadService)
 
 	Expect(service.Called("CreateUpload").Times(1)).To(BeTrue())
 }
@@ -90,7 +81,7 @@ func TestUploadPartHasRequiredHeaders(t *testing.T) {
 		req.Header.Del(tc.Header)
 		w := httptest.NewRecorder()
 		controller.UploadPart(w, req)
-		data := GetRawData(t, w.Body.Bytes())
+		data := test.GetRawData(t, w.Body.Bytes())
 		Expect(data["message"]).To(Equal(tc.Err.Error()))
 	}
 
@@ -134,7 +125,7 @@ func TestUploadPartRequiresBody(t *testing.T) {
 		controller := GetUploadController()
 		controller.UploadPart(w, req)
 
-		data := GetRawData(t, w.Body.Bytes())
+		data := test.GetRawData(t, w.Body.Bytes())
 		Expect(data["message"]).To(Equal(MissingContentBodyError.Error()))
 	}
 
@@ -152,7 +143,7 @@ func TestUploadPartAddsThePart(t *testing.T) {
 	controller := GetUploadController()
 	controller.UploadPart(w, req)
 
-	service := controller.service.(*services.MockUploadService)
+	service := controller.service.(*test.MockUploadService)
 
 	Expect(service.Called("AddPart").Times(1)).To(BeTrue())
 }
@@ -168,12 +159,12 @@ func TestUploadPartReturnsAnEtag(t *testing.T) {
 
 	controller := GetUploadController()
 
-	service := controller.service.(*services.MockUploadService)
+	service := controller.service.(*test.MockUploadService)
 	service.On("AddPart").Return("12345", nil)
 
 	controller.UploadPart(w, req)
 
-	data := GetRawData(t, w.Body.Bytes())
+	data := test.GetRawData(t, w.Body.Bytes())
 
 	Expect(data["status"]).To(Equal("success"))
 	Expect(data["message"]).To(Equal("12345"))

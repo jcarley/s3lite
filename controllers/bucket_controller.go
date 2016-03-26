@@ -4,13 +4,17 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/jcarley/s3lite/services"
 )
 
 type BucketController struct {
+	service services.BucketService
 }
 
-func NewBucketController() *BucketController {
-	return &BucketController{}
+func NewBucketController(service services.BucketService) *BucketController {
+	return &BucketController{
+		service: service,
+	}
 }
 
 func (this *BucketController) Register(router mux.Router) {

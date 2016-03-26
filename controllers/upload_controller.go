@@ -11,9 +11,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/jcarley/s3lite/services"
-	// "github.com/jcarley/s3lite/domain"
-	// "github.com/jcarley/s3lite/encoding"
-	// "github.com/jcarley/s3lite/webservice"
 )
 
 var MissingUploadIdError = errors.New("Request is missing an upload id")
