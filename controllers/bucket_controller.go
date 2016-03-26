@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -45,6 +46,13 @@ func (this *BucketController) CreateBucket(rw http.ResponseWriter, req *http.Req
 }
 
 func (this *BucketController) DeleteBucket(rw http.ResponseWriter, req *http.Request) {
+	fmt.Printf("%+v\n", req)
+
+	// map[string]string
+	vars := mux.Vars(req)
+
+	id := vars["id"]
+
 }
 
 func (this *BucketController) HeadBucket(rw http.ResponseWriter, req *http.Request) {
