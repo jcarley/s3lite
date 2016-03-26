@@ -31,7 +31,11 @@ func (this *BucketController) CreateBucket(rw http.ResponseWriter, req *http.Req
 		return
 	}
 
-	this.service.AddBucket(&bucket)
+	err = this.service.AddBucket(&bucket)
+	if err != nil {
+		httpError(err, http.StatusInternalServerError, rw)
+		return
+	}
 
 	err = encode(rw, &bucket)
 	if err != nil {
