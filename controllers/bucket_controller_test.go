@@ -16,11 +16,11 @@ func GetBucketController() *BucketController {
 	return NewBucketController(mockBucketService)
 }
 
-func TestCreateBucketReturnsAnBucketId(t *testing.T) {
+func TestCreateBucketReturnsBucketId(t *testing.T) {
 	RegisterTestingT(t)
 
 	bucket := &domain.Bucket{
-		"bucket-us-west",
+		Name: "bucket-us-west",
 	}
 
 	bucketBytes := test.SetRawData(t, bucket)
@@ -38,5 +38,6 @@ func TestCreateBucketReturnsAnBucketId(t *testing.T) {
 	data := test.GetRawData(t, w.Body.Bytes())
 
 	Expect(data["bucket_id"]).ToNot(BeNil(), "Should have an bucket id")
+	Expect(data["name"]).To(Equal("bucket-us-west"), "Should have an bucket id")
 	Expect(w.Code).To(Equal(http.StatusOK), "Should receive 200 status")
 }

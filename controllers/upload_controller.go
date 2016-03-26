@@ -174,22 +174,3 @@ func (u *UploadController) parseKey(req *http.Request) string {
 
 	return key
 }
-
-func getHeaderValue(name string, req *http.Request) string {
-	headerValue := req.Header[name]
-	if len(headerValue) > 0 {
-		return headerValue[0]
-	}
-	return ""
-}
-
-func httpError(err error, status int, rw http.ResponseWriter) {
-	errorMessage := Message{"error", err.Error()}
-
-	result, err := json.Marshal(errorMessage)
-	if err != nil {
-		http.Error(rw, "Internal Server Error", http.StatusInternalServerError)
-	} else {
-		http.Error(rw, string(result), status)
-	}
-}

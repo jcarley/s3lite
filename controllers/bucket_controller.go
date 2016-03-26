@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/jcarley/s3lite/domain"
 	"github.com/jcarley/s3lite/services"
 )
 
@@ -22,6 +23,21 @@ func (this *BucketController) Register(router mux.Router) {
 
 // Buckets
 func (this *BucketController) CreateBucket(rw http.ResponseWriter, req *http.Request) {
+
+	var bucket domain.Bucket
+	err := decode(req, &bucket)
+	if err != nil {
+		httpError(err, http.StatusInternalServerError, rw)
+		return
+	}
+
+	this.service.AddBucket(&bucket)
+
+	err = encode(rw, &bucket)
+	if err != nil {
+		httpError(err, http.StatusInternalServerError, rw)
+		return
+	}
 }
 
 func (this *BucketController) DeleteBucket(rw http.ResponseWriter, req *http.Request) {
