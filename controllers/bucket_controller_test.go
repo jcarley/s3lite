@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -58,6 +59,7 @@ func TestDeleteBucketRemovesBucket(t *testing.T) {
 	}{
 		{"1234567890", nil, http.StatusOK},
 		{"unknown", services.RecordNotFoundError, http.StatusNotFound},
+		{"unknown", errors.New("Unknown error"), http.StatusInternalServerError},
 	}
 
 	for _, tc := range cases {
