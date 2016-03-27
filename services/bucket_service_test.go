@@ -19,11 +19,13 @@ func TestAddBucket(t *testing.T) {
 	RegisterTestingT(t)
 
 	cases := []struct {
-		ExpectedId  string
-		ExpectedErr error
+		SuppliedBucket *domain.Bucket
+		ExpectedId     string
+		ExpectedErr    error
 	}{
-		{"1234567890", nil},
-		{"", errors.New("Unknown error")},
+		{&domain.Bucket{Name: "bucket-us-west"}, "1234567890", nil},
+		{&domain.Bucket{Name: "bucket-us-west"}, "", errors.New("Unknown error")},
+		{(*domain.Bucket)(nil), "", errors.New("Must supply a bucket")},
 	}
 
 	for _, tc := range cases {
@@ -31,11 +33,12 @@ func TestAddBucket(t *testing.T) {
 		datastore.On("CreateBucket").Return(tc.ExpectedId, tc.ExpectedErr)
 
 		service := NewBucketService(datastore)
-
-		bucket := domain.NewBucket("bucket-us-west")
+		bucket := tc.SuppliedBucket
 		err := service.AddBucket(bucket)
 
-		Expect(bucket.Id).To(Equal(tc.ExpectedId), fmt.Sprintf("Should have Id equal to %s", tc.ExpectedId))
+		if bucket != nil {
+			Expect(bucket.Id).To(Equal(tc.ExpectedId), fmt.Sprintf("Should have Id equal to %s", tc.ExpectedId))
+		}
 		if tc.ExpectedErr == nil {
 			Expect(err).To(BeNil(), "Should have a nil error")
 		} else {
