@@ -35,10 +35,10 @@ type CreateMultipartUploadResult struct {
 }
 
 type UploadController struct {
-	service services.UploadService
+	service services.UploadServicer
 }
 
-func NewUploadController(service services.UploadService) *UploadController {
+func NewUploadController(service services.UploadServicer) *UploadController {
 	return &UploadController{
 		service,
 	}

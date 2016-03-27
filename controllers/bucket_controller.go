@@ -12,10 +12,10 @@ import (
 )
 
 type BucketController struct {
-	service services.BucketService
+	service services.BucketServicer
 }
 
-func NewBucketController(service services.BucketService) *BucketController {
+func NewBucketController(service services.BucketServicer) *BucketController {
 	return &BucketController{
 		service: service,
 	}
