@@ -29,3 +29,16 @@ func (this *MockBucketService) AddBucket(bucket *domain.Bucket) error {
 
 	return nil
 }
+
+func (this *MockBucketService) DeleteBucketById(id string) (err error) {
+	methodName := "DeleteBucketById"
+
+	this.AddCallChainFunc(methodName)
+
+	if methodWatch, ok := this.MethodWatches()[methodName]; ok {
+		this.GetReturnArg(methodWatch, 0, &err, nil)
+		return
+	}
+
+	return nil
+}

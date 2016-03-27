@@ -10,6 +10,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/jcarley/s3lite/domain"
+	"github.com/jcarley/s3lite/services"
 	"github.com/jcarley/s3lite/test"
 	"github.com/jcarley/s3lite/web"
 	. "github.com/onsi/gomega"
@@ -50,22 +51,35 @@ func TestCreateBucketReturnsBucketId(t *testing.T) {
 func TestDeleteBucketRemovesBucket(t *testing.T) {
 	RegisterTestingT(t)
 
-	id := "1234567890"
-	path := fmt.Sprintf("http://s3.example.com/buckets/%s", id)
-	req, _ := http.NewRequest("DELETE", path, nil)
+	cases := []struct {
+		Id         string
+		Err        error
+		StatusCode int
+	}{
+		{"1234567890", nil, http.StatusOK},
+		{"unknown", services.RecordNotFoundError, http.StatusNotFound},
+	}
 
-	addHeaders(req)
+	for _, tc := range cases {
+		id := tc.Id
+		path := fmt.Sprintf("http://s3.example.com/buckets/%s", id)
+		req, _ := http.NewRequest("DELETE", path, nil)
 
-	w := httptest.NewRecorder()
+		addHeaders(req)
 
-	v := make(map[string]string)
-	v["id"] = id
-	ctx := context.WithValue(context.Background(), web.RequestVarsKey, v)
-	controller := GetBucketController()
-	controller.DeleteBucket(ctx, w, req)
+		w := httptest.NewRecorder()
 
-	data := test.GetRawData(t, w.Body.Bytes())
+		v := make(map[string]string)
+		v["id"] = id
+		ctx := context.WithValue(context.Background(), web.RequestVarsKey, v)
+		controller := GetBucketController()
 
-	Expect(data["status"]).To(Equal("success"), "Should have a success status")
-	Expect(w.Code).To(Equal(http.StatusOK), "Should receive 200 status")
+		service := controller.service.(*test.MockBucketService)
+		service.On("DeleteBucketById").Return(tc.Err)
+
+		controller.DeleteBucket(ctx, w, req)
+
+		Expect(service.Called("DeleteBucketById").Times(1)).To(BeTrue())
+		Expect(tc.StatusCode).To(Equal(w.Code), fmt.Sprintf("Should receive %d - %s", tc.StatusCode, http.StatusText(tc.StatusCode)))
+	}
 }

@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 
 	"golang.org/x/net/context"
@@ -51,14 +50,19 @@ func (this *BucketController) CreateBucket(ctx context.Context, rw http.Response
 }
 
 func (this *BucketController) DeleteBucket(ctx context.Context, rw http.ResponseWriter, req *http.Request) {
-	fmt.Printf("%+v\n", req)
 
 	vars := web.VarsFromContext(ctx)
 	id := vars["id"]
 
-	fmt.Println("==========================")
-	fmt.Println(id)
-	fmt.Println("==========================")
+	err := this.service.DeleteBucketById(id)
+	if err != nil {
+		if err == services.RecordNotFoundError {
+			httpError(err, http.StatusNotFound, rw)
+		} else {
+			httpError(err, http.StatusInternalServerError, rw)
+		}
+	}
+
 }
 
 func (this *BucketController) HeadBucket(rw http.ResponseWriter, req *http.Request) {

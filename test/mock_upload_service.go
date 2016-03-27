@@ -15,13 +15,13 @@ func NewMockUploadService() *MockUploadService {
 }
 
 func (this *MockUploadService) AddPart(partNumber int, uploadId string, body []byte) (etag string, err error) {
-	this.AddCallChainFunc("AddPart")
+	methodName := "AddPart"
 
-	if methodWatch, ok := this.MethodWatches()["AddPart"]; ok {
+	this.AddCallChainFunc(methodName)
 
+	if methodWatch, ok := this.MethodWatches()[methodName]; ok {
 		this.GetReturnArg(methodWatch, 0, &etag, "")
 		this.GetReturnArg(methodWatch, 1, &err, nil)
-
 		return
 	}
 
