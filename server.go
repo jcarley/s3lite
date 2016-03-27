@@ -7,6 +7,8 @@ import (
 	"github.com/codegangsta/negroni"
 	"github.com/gorilla/mux"
 	"github.com/jcarley/s3lite/controllers"
+	"github.com/jcarley/s3lite/domain"
+	"github.com/jcarley/s3lite/services"
 
 	r "github.com/dancannon/gorethink"
 )

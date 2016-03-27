@@ -2,3 +2,4 @@ files/
 tmp/
 .DS_Store
 data/
+s3lite

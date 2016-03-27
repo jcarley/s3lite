@@ -44,7 +44,7 @@ func NewUploadController(service services.UploadServicer) *UploadController {
 	}
 }
 
-func (this *UploadController) Register(router mux.Router) {
+func (this *UploadController) Register(router *mux.Router) {
 }
 
 // Initiates a multipart upload and returns an upload ID.

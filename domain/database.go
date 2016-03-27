@@ -2,7 +2,7 @@ package domain
 
 type UploadDatastore interface {
 	GetUploadById(uploadId string) *Upload
-	CreateUpload(upload *Upload) (uint, error)
+	CreateUpload(upload *Upload) (string, error)
 }
 
 type BucketDatastore interface {

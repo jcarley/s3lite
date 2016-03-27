@@ -28,9 +28,10 @@ func (this *MockUploadService) AddPart(partNumber int, uploadId string, body []b
 	return "", nil
 }
 
-func (this *MockUploadService) CreateUpload(filename string, bucket string, key string) (upload domain.Upload, err error) {
+func (this *MockUploadService) CreateUpload(filename string, bucket string, key string) (upload *domain.Upload, err error) {
 	this.AddCallChainFunc("CreateUpload")
-	upload = domain.NewUpload()
+	v := domain.NewUpload()
+	upload = &v
 	err = nil
 	return
 }
