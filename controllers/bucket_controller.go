@@ -23,11 +23,12 @@ func NewBucketController(service services.BucketService) *BucketController {
 }
 
 func (this *BucketController) Register(router *mux.Router) {
-	router.Handle("/buckets/{id}", web.NewContextAdapter(web.ContextHandlerFunc(this.DeleteBucket))).Methods("DELETE")
+	web.Post("/buckets", router, this.CreateBucket)
+	web.Delete("/buckets/{id}", router, this.DeleteBucket)
 }
 
 // Buckets
-func (this *BucketController) CreateBucket(rw http.ResponseWriter, req *http.Request) {
+func (this *BucketController) CreateBucket(ctx context.Context, rw http.ResponseWriter, req *http.Request) {
 
 	var bucket domain.Bucket
 	err := decode(req, &bucket)

@@ -36,8 +36,9 @@ func TestCreateBucketReturnsBucketId(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
+	ctx := context.Background()
 	controller := GetBucketController()
-	controller.CreateBucket(w, req)
+	controller.CreateBucket(ctx, w, req)
 
 	data := test.GetRawData(t, w.Body.Bytes())
 
