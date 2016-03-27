@@ -1,10 +1,12 @@
 package services
 
-import (
-	"errors"
+import "github.com/jcarley/s3lite/domain"
 
-	"github.com/jcarley/s3lite/domain"
-)
+type InvalidArgumentError string
+
+func (i InvalidArgumentError) Error() string {
+	return "invalid argument: " + string(i)
+}
 
 type BucketServicer interface {
 	AddBucket(bucket *domain.Bucket) error
@@ -23,7 +25,7 @@ func NewBucketService(datastore domain.BucketDatastore) *BucketService {
 
 func (this *BucketService) AddBucket(bucket *domain.Bucket) error {
 	if bucket == nil {
-		return errors.New("Must supply a bucket")
+		return InvalidArgumentError("bucket can not be nil")
 	}
 
 	id, err := this.datastore.CreateBucket(bucket)
@@ -32,6 +34,16 @@ func (this *BucketService) AddBucket(bucket *domain.Bucket) error {
 	}
 
 	bucket.Id = id
+
+	return nil
+}
+
+func (this *BucketService) DeleteBucketById(id string) error {
+
+	err := this.datastore.DeleteBucketById(id)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

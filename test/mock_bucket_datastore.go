@@ -32,3 +32,17 @@ func (this *MockBucketDatastore) CreateBucket(bucket *domain.Bucket) (id string,
 
 	return "", nil
 }
+
+func (this *MockBucketDatastore) DeleteBucketById(bucketId string) (err error) {
+
+	methodName := "DeleteBucketById"
+
+	this.AddCallChainFunc(methodName)
+
+	if methodWatch, ok := this.MethodWatches()[methodName]; ok {
+		this.GetReturnArg(methodWatch, 0, &err, nil)
+		return
+	}
+
+	return nil
+}

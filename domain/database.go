@@ -8,4 +8,5 @@ type UploadDatastore interface {
 type BucketDatastore interface {
 	GetBucketById(bucketId string) *Bucket
 	CreateBucket(bucket *Bucket) (string, error)
+	DeleteBucketById(bucketId string) error
 }

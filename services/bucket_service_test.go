@@ -10,11 +10,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// type BucketDatastore interface {
-// GetBucketById(bucketId string) *Bucket
-// CreateBucket(bucket *Bucket) (string, error)
-// }
-
 func TestAddBucket(t *testing.T) {
 	RegisterTestingT(t)
 
@@ -25,7 +20,7 @@ func TestAddBucket(t *testing.T) {
 	}{
 		{&domain.Bucket{Name: "bucket-us-west"}, "1234567890", nil},
 		{&domain.Bucket{Name: "bucket-us-west"}, "", errors.New("Unknown error")},
-		{(*domain.Bucket)(nil), "", errors.New("Must supply a bucket")},
+		{(*domain.Bucket)(nil), "", InvalidArgumentError("bucket can not be nil")},
 	}
 
 	for _, tc := range cases {
@@ -42,7 +37,34 @@ func TestAddBucket(t *testing.T) {
 		if tc.ExpectedErr == nil {
 			Expect(err).To(BeNil(), "Should have a nil error")
 		} else {
-			Expect(err).To(MatchError(tc.ExpectedErr), fmt.Sprintf("Should have received error %s", tc.ExpectedErr.Error()))
+			Expect(err).To(Equal(tc.ExpectedErr), fmt.Sprintf("Should have received error %s", tc.ExpectedErr.Error()))
+		}
+	}
+}
+
+func TestDeleteBucketById(t *testing.T) {
+	RegisterTestingT(t)
+
+	cases := []struct {
+		Id          string
+		ExpectedErr error
+	}{
+		{"1234567890", nil},
+		{"", InvalidArgumentError("id can not be an empty string")},
+	}
+
+	for _, tc := range cases {
+		datastore := test.NewMockBucketDatastore()
+		datastore.On("DeleteBucketById").Return(tc.ExpectedErr)
+
+		service := NewBucketService(datastore)
+		err := service.DeleteBucketById(tc.Id)
+
+		Expect(datastore.Called("DeleteBucketById").Times(1)).To(BeTrue())
+		if tc.ExpectedErr == nil {
+			Expect(err).To(BeNil(), "Should have a nil error")
+		} else {
+			Expect(err).To(Equal(tc.ExpectedErr), fmt.Sprintf("Should have received error %s", tc.ExpectedErr.Error()))
 		}
 	}
 }
