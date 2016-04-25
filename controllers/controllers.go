@@ -8,6 +8,11 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+type Message struct {
+	Status  string `json:"status"`
+	Message string `json:"message"`
+}
+
 func getHeaderValue(name string, req *http.Request) string {
 	headerValue := req.Header[name]
 	if len(headerValue) > 0 {

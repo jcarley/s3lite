@@ -23,11 +23,6 @@ var rxFilename = regexp.MustCompile(`filename=(.*)$`)
 var rxBucket = regexp.MustCompile(`^([\S\w\-]+)\.s3`)
 var rxKey = regexp.MustCompile(`^.*\/([a-zA-z\/]*)$`)
 
-type Message struct {
-	Status  string `json:"status"`
-	Message string `json:"message"`
-}
-
 type CreateMultipartUploadResult struct {
 	Bucket   string `json:"bucket"`
 	Key      string `json:"key"`
